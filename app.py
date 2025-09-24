@@ -17,21 +17,31 @@ DATABASE = 'database.db'
 
 def init_db():
     """Initialize the SQLite database"""
-    if not os.path.exists(DATABASE):
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS email_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                original_text TEXT NOT NULL,
-                rewritten_text TEXT NOT NULL,
-                tone TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        conn.commit()
-        conn.close()
-        print("✅ Database initialized successfully!")
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    # Create table if not exists
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS email_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            original_text TEXT NOT NULL,
+            rewritten_text TEXT NOT NULL,
+            tone TEXT NOT NULL,
+            mode TEXT DEFAULT 'rewrite',
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Check if mode column exists, if not add it
+    cursor.execute("PRAGMA table_info(email_history)")
+    columns = [column[1] for column in cursor.fetchall()]
+    if 'mode' not in columns:
+        cursor.execute('ALTER TABLE email_history ADD COLUMN mode TEXT DEFAULT "rewrite"')
+        print("✅ Added 'mode' column to existing database")
+    
+    conn.commit()
+    conn.close()
+    print("✅ Database initialized successfully!")
 
 def get_db_connection():
     """Get database connection"""
@@ -107,8 +117,8 @@ def generate():
         if save_history:
             conn = get_db_connection()
             conn.execute(
-                'INSERT INTO email_history (original_text, rewritten_text, tone) VALUES (?, ?, ?)',
-                (original_text, rewritten_text, tone)
+                'INSERT INTO email_history (original_text, rewritten_text, tone, mode) VALUES (?, ?, ?, ?)',
+                (original_text, rewritten_text, tone, mode)
             )
             conn.commit()
             conn.close()
