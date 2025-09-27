@@ -31,7 +31,7 @@
                         <a class="nav-link" href="/">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/rewrite">Rewrite</a>
+                        <a class="nav-link" href="/rewrite">Create Email</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="/history">History</a>
@@ -51,10 +51,10 @@
             <div class="text-center mb-5">
                 <h1 class="display-4 fw-bold mb-3">
                     <i class="fas fa-history text-primary me-2"></i>
-                    Rewrite History
+                    Email History
                 </h1>
                 <p class="lead text-muted">
-                    View and manage your previously rewritten emails
+                    View and manage your generated and rewritten emails
                 </p>
             </div>
 
@@ -99,7 +99,14 @@
                         <div class="card-header bg-light">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="badge bg-primary">{{ record.tone|title }}</span>
+                                    <span class="badge {% if record.mode == 'write' %}bg-success{% else %}bg-primary{% endif %}">
+                                        {% if record.mode == 'write' %}
+                                        <i class="fas fa-pen me-1"></i>Generated
+                                        {% else %}
+                                        <i class="fas fa-edit me-1"></i>Rewritten
+                                        {% endif %}
+                                    </span>
+                                    <span class="badge bg-secondary">{{ record.tone|title }}</span>
                                     <small class="text-muted ms-2">
                                         <i class="fas fa-clock me-1"></i>
                                         {{ record.timestamp }}
@@ -115,17 +122,25 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <!-- Original Text -->
+                            <!-- Input/Original Text -->
                             <h6 class="text-muted mb-2">
+                                {% if record.mode == 'write' %}
+                                <i class="fas fa-lightbulb me-2"></i>Description:
+                                {% else %}
                                 <i class="fas fa-file-alt me-2"></i>Original:
+                                {% endif %}
                             </h6>
                             <div class="original-text p-3 bg-light rounded mb-3" style="max-height: 150px; overflow-y: auto;">
                                 <small>{{ record.original_text }}</small>
                             </div>
 
-                            <!-- Rewritten Text -->
+                            <!-- Generated/Rewritten Text -->
                             <h6 class="text-success mb-2">
-                                <i class="fas fa-check-circle me-2"></i>Rewritten:
+                                {% if record.mode == 'write' %}
+                                <i class="fas fa-envelope me-2"></i>Generated Email:
+                                {% else %}
+                                <i class="fas fa-check-circle me-2"></i>Rewritten Email:
+                                {% endif %}
                             </h6>
                             <div class="rewritten-text p-3 bg-success bg-opacity-10 rounded mb-3" style="max-height: 150px; overflow-y: auto;">
                                 <small>{{ record.rewritten_text }}</small>
@@ -139,6 +154,7 @@
                                 >
                                     <i class="fas fa-copy me-1"></i>Copy
                                 </button>
+                                {% if record.mode == 'rewrite' %}
                                 <button 
                                     class="btn btn-sm btn-outline-secondary compare-btn" 
                                     data-bs-toggle="modal" 
@@ -149,6 +165,18 @@
                                 >
                                     <i class="fas fa-exchange-alt me-1"></i>Compare
                                 </button>
+                                {% else %}
+                                <button 
+                                    class="btn btn-sm btn-outline-info view-btn" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#viewModal"
+                                    data-description="{{ record.original_text }}"
+                                    data-email="{{ record.rewritten_text }}"
+                                    data-tone="{{ record.tone }}"
+                                >
+                                    <i class="fas fa-eye me-1"></i>View Full
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -162,17 +190,53 @@
                 <i class="fas fa-inbox fa-5x text-muted mb-4 opacity-25"></i>
                 <h3 class="text-muted mb-3">No History Yet</h3>
                 <p class="lead text-muted mb-4">
-                    Start rewriting emails to build your history
+                    Start writing or rewriting emails to build your history
                 </p>
                 <a href="/rewrite" class="btn btn-primary btn-lg">
-                    <i class="fas fa-magic me-2"></i>Rewrite Your First Email
+                    <i class="fas fa-envelope-open-text me-2"></i>Create Your First Email
                 </a>
             </div>
             {% endif %}
         </div>
     </main>
 
-    <!-- Compare Modal -->
+    <!-- View Modal (for generated emails) -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-envelope me-2"></i>Generated Email
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-lightbulb me-2"></i>Description
+                        </h6>
+                        <div id="viewDescription" class="p-3 bg-light rounded" style="max-height: 150px; overflow-y: auto; white-space: pre-wrap;">
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-envelope me-2"></i>Generated Email (<span id="viewTone"></span>)
+                        </h6>
+                        <div id="viewEmail" class="p-3 bg-success bg-opacity-10 rounded" style="max-height: 300px; overflow-y: auto; white-space: pre-wrap;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="viewCopyBtn">
+                        <i class="fas fa-copy me-2"></i>Copy Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Modal (for rewritten emails) -->
     <div class="modal fade" id="compareModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -239,7 +303,10 @@
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
-    <!-- Custom JS -->
+    <!-- Custom JS - Utilities -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Page-specific JS -->
     <script src="{{ url_for('static', filename='js/history.js') }}"></script>
 </body>
 </html>
