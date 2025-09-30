@@ -22,14 +22,18 @@
         // Delete button click
         $('.delete-btn').on('click', handleDelete);
 
-        // Compare button click
+        // Compare button click (for rewritten emails)
         $('.compare-btn').on('click', handleCompare);
+        
+        // View button click (for generated emails)
+        $('.view-btn').on('click', handleView);
 
         // Clear all button click
         $('#clearAllButton').on('click', handleClearAll);
 
-        // Modal copy button
+        // Modal copy buttons
         $('#modalCopyBtn').on('click', handleModalCopy);
+        $('#viewCopyBtn').on('click', handleViewCopy);
     }
 
     /**
@@ -196,11 +200,55 @@
         // Store rewritten text for copy button
         $('#modalCopyBtn').data('text', rewritten);
     }
+    
+    /**
+     * Handle view button click (for generated emails)
+     */
+    function handleView(e) {
+        e.preventDefault();
+        const $button = $(this);
+        const description = $button.data('description');
+        const email = $button.data('email');
+        const tone = $button.data('tone');
+        
+        // Update modal content
+        $('#viewDescription').text(description);
+        $('#viewEmail').text(email);
+        $('#viewTone').text(tone.charAt(0).toUpperCase() + tone.slice(1));
+        
+        // Store email text for copy button
+        $('#viewCopyBtn').data('text', email);
+    }
 
     /**
-     * Handle modal copy button
+     * Handle modal copy button (for compare modal)
      */
     function handleModalCopy(e) {
+        e.preventDefault();
+        const text = $(this).data('text');
+        const $button = $(this);
+        
+        copyToClipboard(text).then(success => {
+            if (success) {
+                showToast('Copied!', 'Email copied to clipboard', 'success');
+                
+                // Visual feedback
+                const originalHtml = $button.html();
+                $button.html('<i class="fas fa-check me-2"></i>Copied!');
+                
+                setTimeout(() => {
+                    $button.html(originalHtml);
+                }, 2000);
+            } else {
+                showToast('Error', 'Failed to copy to clipboard', 'error');
+            }
+        });
+    }
+    
+    /**
+     * Handle view modal copy button (for view modal)
+     */
+    function handleViewCopy(e) {
         e.preventDefault();
         const text = $(this).data('text');
         const $button = $(this);
