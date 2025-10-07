@@ -75,9 +75,9 @@ def about():
 @app.route('/api/generate', methods=['POST'])
 def generate():
     """
-    API endpoint to generate rewritten email
-    Accepts JSON with 'text' and 'tone' fields
-    Returns rewritten email text
+    API endpoint to generate/rewrite email
+    Accepts JSON with 'text', 'tone', and 'mode' fields
+    Returns rewritten or generated email text
     """
     try:
         data = request.get_json()
@@ -87,6 +87,7 @@ def generate():
         
         original_text = data.get('text', '').strip()
         tone = data.get('tone', 'professional').strip()
+        mode = data.get('mode', 'rewrite').strip()  # 'write' or 'rewrite'
         save_history = data.get('save_history', True)
         
         # Validation
@@ -99,8 +100,8 @@ def generate():
         if len(original_text) > 5000:
             return jsonify({'error': 'Email text is too long (maximum 5000 characters)'}), 400
         
-        # Call AI model to rewrite email
-        rewritten_text = rewrite_email(original_text, tone)
+        # Call AI model to generate/rewrite email
+        rewritten_text = rewrite_email(original_text, tone, mode)
         
         # Save to database if requested
         if save_history:
@@ -116,6 +117,7 @@ def generate():
             'success': True,
             'rewritten_text': rewritten_text,
             'tone': tone,
+            'mode': mode,
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
     

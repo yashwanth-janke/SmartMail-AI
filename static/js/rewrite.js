@@ -10,10 +10,12 @@
     // State management
     let isListening = false;
     let recognition = null;
+    let currentMode = 'write'; // 'write' or 'rewrite'
     let currentEmail = {
         original: '',
-        rewritten: '',
-        tone: 'professional'
+        generated: '',
+        tone: 'professional',
+        template: null
     };
 
     // Initialize on document ready
@@ -21,6 +23,7 @@
         initializeElements();
         initializeSpeechRecognition();
         setupEventListeners();
+        updateUIForMode();
     });
 
     /**
@@ -31,20 +34,29 @@
         window.elements = {
             emailInput: $('#emailInput'),
             toneSelect: $('#toneSelect'),
-            rewriteButton: $('#rewriteButton'),
+            generateButton: $('#generateButton'),
             clearButton: $('#clearButton'),
             micButton: $('#micButton'),
             copyButton: $('#copyButton'),
             regenerateButton: $('#regenerateButton'),
+            editButton: $('#editButton'),
             charCount: $('#charCount'),
             voiceStatus: $('#voiceStatus'),
             voiceStatusText: $('#voiceStatusText'),
             loadingSpinner: $('#loadingSpinner'),
             outputPlaceholder: $('#outputPlaceholder'),
             resultSection: $('#resultSection'),
-            rewrittenOutput: $('#rewrittenOutput'),
+            generatedOutput: $('#generatedOutput'),
             appliedTone: $('#appliedTone'),
-            timestamp: $('#timestamp')
+            timestamp: $('#timestamp'),
+            writeMode: $('#writeMode'),
+            rewriteMode: $('#rewriteMode'),
+            writeTemplates: $('#writeTemplates'),
+            inputTitle: $('#inputTitle'),
+            outputTitle: $('#outputTitle'),
+            inputLabel: $('#inputLabel'),
+            buttonText: $('#buttonText'),
+            modeDisplay: $('#modeDisplay')
         };
     }
 
@@ -147,14 +159,28 @@
             validateInput();
         });
 
+        // Mode toggle buttons
+        elements.writeMode.on('click', function() {
+            switchMode('write');
+        });
+
+        elements.rewriteMode.on('click', function() {
+            switchMode('rewrite');
+        });
+
+        // Template selection
+        $('.template-card').on('click', function() {
+            selectTemplate($(this).data('template'));
+        });
+
         // Microphone button click
         elements.micButton.on('click', toggleVoiceInput);
 
         // Clear button click
         elements.clearButton.on('click', clearForm);
 
-        // Rewrite button click (uses async/await)
-        elements.rewriteButton.on('click', handleRewrite);
+        // Generate button click (uses async/await)
+        elements.generateButton.on('click', handleGenerate);
 
         // Copy button click
         elements.copyButton.on('click', handleCopy);
@@ -162,10 +188,83 @@
         // Regenerate button click
         elements.regenerateButton.on('click', handleRegenerate);
 
+        // Edit button click
+        elements.editButton.on('click', handleEdit);
+
         // Tone select change
         elements.toneSelect.on('change', function() {
             currentEmail.tone = $(this).val();
         });
+    }
+
+    /**
+     * Switch between Write and Rewrite modes
+     */
+    function switchMode(mode) {
+        currentMode = mode;
+        
+        // Update button states
+        if (mode === 'write') {
+            elements.writeMode.addClass('active');
+            elements.rewriteMode.removeClass('active');
+        } else {
+            elements.rewriteMode.addClass('active');
+            elements.writeMode.removeClass('active');
+        }
+        
+        // Update UI
+        updateUIForMode();
+        clearForm();
+    }
+
+    /**
+     * Update UI based on current mode
+     */
+    function updateUIForMode() {
+        if (currentMode === 'write') {
+            elements.writeTemplates.show();
+            elements.inputTitle.text('Email Content');
+            elements.outputTitle.text('Generated Email');
+            elements.inputLabel.text('What would you like to write about?');
+            elements.buttonText.text('Generate Email');
+            elements.emailInput.attr('placeholder', 'Describe what you want to say, or write your email draft here...');
+            elements.modeDisplay.text('Mode: Write');
+        } else {
+            elements.writeTemplates.hide();
+            elements.inputTitle.text('Original Email');
+            elements.outputTitle.text('Rewritten Email');
+            elements.inputLabel.text('Enter your email to rewrite');
+            elements.buttonText.text('Rewrite Email');
+            elements.emailInput.attr('placeholder', 'Paste your existing email here or speak it...');
+            elements.modeDisplay.text('Mode: Rewrite');
+        }
+    }
+
+    /**
+     * Select a template
+     */
+    function selectTemplate(templateName) {
+        // Remove selection from all templates
+        $('.template-card').removeClass('selected');
+        
+        // Select current template
+        $(`.template-card[data-template="${templateName}"]`).addClass('selected');
+        
+        // Set template text
+        currentEmail.template = templateName;
+        
+        const templates = {
+            meeting: "I would like to schedule a meeting to discuss [topic]. Are you available on [date] at [time]?",
+            followup: "I wanted to follow up on [topic/previous conversation]. Could you please provide an update on [specific item]?",
+            thankyou: "Thank you for [specific action/help]. I really appreciate your [time/support/assistance].",
+            introduction: "My name is [your name] and I'm reaching out regarding [purpose]. I would like to [specific request or goal]."
+        };
+        
+        if (templates[templateName]) {
+            elements.emailInput.val(templates[templateName]);
+            updateCharCount();
+            validateInput();
+        }
     }
 
     /**
@@ -249,6 +348,8 @@
      */
     function clearForm() {
         elements.emailInput.val('');
+        $('.template-card').removeClass('selected');
+        currentEmail.template = null;
         updateCharCount();
         validateInput();
         hideResult();
@@ -257,10 +358,10 @@
     }
 
     /**
-     * Handle rewrite button click
+     * Handle generate/rewrite button click
      * Uses async/await for API call
      */
-    async function handleRewrite() {
+    async function handleGenerate() {
         const text = elements.emailInput.val().trim();
         const tone = elements.toneSelect.val();
 
@@ -278,28 +379,48 @@
 
         try {
             // Make API call using async/await with Promise
-            const result = await rewriteEmail(text, tone);
+            const result = await generateEmail(text, tone, currentMode);
             
             // Hide loading and show result
             hideLoading();
             displayResult(result);
             
-            showToast('Success!', 'Email rewritten successfully', 'success');
+            const successMsg = currentMode === 'write' ? 'Email generated successfully' : 'Email rewritten successfully';
+            showToast('Success!', successMsg, 'success');
         } catch (error) {
             hideLoading();
-            showToast('Error', error.message || 'Failed to rewrite email', 'error');
-            console.error('Rewrite error:', error);
+            showToast('Error', error.message || 'Failed to process email', 'error');
+            console.error('Generation error:', error);
         }
     }
 
     /**
-     * Rewrite email using API
+     * Handle edit button click
+     */
+    function handleEdit() {
+        const text = elements.generatedOutput.text();
+        elements.emailInput.val(text);
+        updateCharCount();
+        validateInput();
+        hideResult();
+        
+        // Scroll to input
+        $('html, body').animate({
+            scrollTop: elements.emailInput.offset().top - 100
+        }, 500);
+        
+        showToast('Edit Mode', 'You can now edit and regenerate', 'info');
+    }
+
+    /**
+     * Generate/Rewrite email using API
      * Returns a Promise (async function)
-     * @param {string} text - Original email text
+     * @param {string} text - Original email text or description
      * @param {string} tone - Desired tone
+     * @param {string} mode - 'write' or 'rewrite'
      * @returns {Promise<Object>}
      */
-    async function rewriteEmail(text, tone) {
+    async function generateEmail(text, tone, mode) {
         return new Promise(async (resolve, reject) => {
             try {
                 const response = await fetch('/api/generate', {
@@ -310,6 +431,7 @@
                     body: JSON.stringify({
                         text: text,
                         tone: tone,
+                        mode: mode,
                         save_history: true
                     })
                 });
@@ -323,7 +445,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    currentEmail.rewritten = data.rewritten_text;
+                    currentEmail.generated = data.rewritten_text;
                     resolve(data);
                 } else {
                     reject(new Error(data.error || 'Unknown error'));
@@ -338,7 +460,7 @@
      * Show loading spinner
      */
     function showLoading() {
-        elements.rewriteButton.prop('disabled', true);
+        elements.generateButton.prop('disabled', true);
         elements.outputPlaceholder.addClass('d-none');
         elements.resultSection.addClass('d-none');
         elements.loadingSpinner.removeClass('d-none').hide().fadeIn(300);
@@ -351,16 +473,16 @@
         elements.loadingSpinner.fadeOut(300, function() {
             $(this).addClass('d-none');
         });
-        elements.rewriteButton.prop('disabled', false);
+        elements.generateButton.prop('disabled', false);
     }
 
     /**
-     * Display rewrite result with jQuery animation
+     * Display result with jQuery animation
      * @param {Object} result - API response data
      */
     function displayResult(result) {
         // Update content
-        elements.rewrittenOutput.text(result.rewritten_text);
+        elements.generatedOutput.text(result.rewritten_text);
         elements.appliedTone.text(result.tone.charAt(0).toUpperCase() + result.tone.slice(1));
         elements.timestamp.text(formatTimestamp(result.timestamp));
 
@@ -388,7 +510,7 @@
      * Uses callback pattern with Promise
      */
     function handleCopy() {
-        const text = elements.rewrittenOutput.text();
+        const text = elements.generatedOutput.text();
         
         // Use copyToClipboard function which returns a Promise
         copyToClipboard(text).then(success => {
@@ -415,7 +537,7 @@
             
             // Wait a moment for better UX
             setTimeout(() => {
-                handleRewrite();
+                handleGenerate();
             }, 500);
         }
     }

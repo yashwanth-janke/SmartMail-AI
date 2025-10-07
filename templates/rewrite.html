@@ -48,26 +48,73 @@
     <main class="rewrite-page py-5">
         <div class="container">
             <!-- Page Header -->
-            <div class="text-center mb-5">
+            <div class="text-center mb-4">
                 <h1 class="display-4 fw-bold mb-3">
                     <i class="fas fa-magic text-primary me-2"></i>
-                    Rewrite Your Email
+                    AI Email Assistant
                 </h1>
                 <p class="lead text-muted">
-                    Type or speak your email, choose a tone, and let AI do the magic
+                    Write new emails or rewrite existing ones with AI-powered assistance
                 </p>
+            </div>
+
+            <!-- Mode Toggle -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-6">
+                    <div class="mode-toggle">
+                        <button class="btn btn-outline-primary active" id="writeMode">
+                            <i class="fas fa-pen-fancy me-2"></i>Write Email
+                        </button>
+                        <button class="btn btn-outline-primary" id="rewriteMode">
+                            <i class="fas fa-sync-alt me-2"></i>Rewrite Email
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
                 <!-- Input Section -->
                 <div class="col-lg-6 mb-4">
                     <div class="card shadow-sm">
-                        <div class="card-header bg-primary text-white">
+                        <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="fas fa-pen me-2"></i>Original Email
+                                <i class="fas fa-pen me-2"></i><span id="inputTitle">Email Content</span>
                             </h5>
                         </div>
                         <div class="card-body">
+                            <!-- Write Mode Templates (shown by default) -->
+                            <div id="writeTemplates" class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-list me-2"></i>Choose a Template (Optional)
+                                </label>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="template-card" data-template="meeting">
+                                            <h6><i class="fas fa-calendar-alt me-2"></i>Meeting Request</h6>
+                                            <p>Schedule a meeting</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="template-card" data-template="followup">
+                                            <h6><i class="fas fa-reply me-2"></i>Follow-up</h6>
+                                            <p>Check on progress</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="template-card" data-template="thankyou">
+                                            <h6><i class="fas fa-heart me-2"></i>Thank You</h6>
+                                            <p>Express gratitude</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="template-card" data-template="introduction">
+                                            <h6><i class="fas fa-handshake me-2"></i>Introduction</h6>
+                                            <p>Introduce yourself</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Voice Input Status -->
                             <div id="voiceStatus" class="alert alert-info d-none" role="alert">
                                 <i class="fas fa-microphone-alt me-2"></i>
@@ -75,14 +122,19 @@
                             </div>
 
                             <!-- Text Input Area -->
-                            <div class="input-group mb-3">
-                                <textarea 
-                                    id="emailInput" 
-                                    class="form-control" 
-                                    rows="10" 
-                                    placeholder="Type your email here or click the microphone to speak..."
-                                    maxlength="5000"
-                                ></textarea>
+                            <div class="mb-3">
+                                <label for="emailInput" class="form-label">
+                                    <span id="inputLabel">What would you like to write about?</span>
+                                </label>
+                                <div class="input-group">
+                                    <textarea 
+                                        id="emailInput" 
+                                        class="form-control" 
+                                        rows="10" 
+                                        placeholder="Describe what you want to say, or type/speak your email here..."
+                                        maxlength="5000"
+                                    ></textarea>
+                                </div>
                             </div>
 
                             <!-- Character Counter -->
@@ -101,7 +153,7 @@
 
                             <!-- Tone Selection -->
                             <div class="mb-3">
-                                <label for="toneSelect" class="form-label fw-bold">
+                                <label for="toneSelect" class="form-label">
                                     <i class="fas fa-sliders-h me-2"></i>Select Tone
                                 </label>
                                 <select id="toneSelect" class="form-select">
@@ -122,11 +174,11 @@
                             <!-- Action Buttons -->
                             <div class="d-grid gap-2">
                                 <button 
-                                    id="rewriteButton" 
+                                    id="generateButton" 
                                     class="btn btn-primary btn-lg"
                                     disabled
                                 >
-                                    <i class="fas fa-wand-magic-sparkles me-2"></i>Rewrite Email
+                                    <i class="fas fa-wand-magic-sparkles me-2"></i><span id="buttonText">Generate Email</span>
                                 </button>
                                 <button 
                                     id="clearButton" 
@@ -142,9 +194,9 @@
                 <!-- Output Section -->
                 <div class="col-lg-6 mb-4">
                     <div class="card shadow-sm">
-                        <div class="card-header bg-success text-white">
+                        <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="fas fa-check-circle me-2"></i>Rewritten Email
+                                <i class="fas fa-check-circle me-2"></i><span id="outputTitle">Generated Email</span>
                             </h5>
                         </div>
                         <div class="card-body">
@@ -153,32 +205,34 @@
                                 <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
-                                <p class="mt-3 text-muted">AI is polishing your email...</p>
+                                <p class="mt-3 text-muted">AI is crafting your email...</p>
                             </div>
 
                             <!-- Placeholder (shown initially) -->
                             <div id="outputPlaceholder" class="text-center py-5 text-muted">
                                 <i class="fas fa-envelope fa-4x mb-3 opacity-25"></i>
-                                <p>Your rewritten email will appear here</p>
-                                <small>Enter your email and click "Rewrite Email" to start</small>
+                                <p>Your AI-generated email will appear here</p>
+                                <small>Enter your content and click the generate button to start</small>
                             </div>
 
                             <!-- Result Section (hidden initially) -->
                             <div id="resultSection" class="d-none">
-                                <!-- Rewritten Text -->
+                                <!-- Metadata -->
                                 <div class="alert alert-success mb-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <small class="text-muted">
                                             <i class="fas fa-info-circle me-1"></i>
+                                            <span id="modeDisplay">Mode: Write</span> | 
                                             Tone: <span id="appliedTone" class="fw-bold"></span>
                                         </small>
                                         <small class="text-muted" id="timestamp"></small>
                                     </div>
                                 </div>
 
+                                <!-- Output Text -->
                                 <div 
-                                    id="rewrittenOutput" 
-                                    class="output-text p-3 bg-light border rounded mb-3"
+                                    id="generatedOutput" 
+                                    class="output-text p-3 border rounded mb-3"
                                     style="white-space: pre-wrap; min-height: 200px; max-height: 400px; overflow-y: auto;"
                                 >
                                 </div>
@@ -201,12 +255,12 @@
                                             </button>
                                         </div>
                                         <div class="col-6">
-                                            <a 
-                                                href="/" 
+                                            <button 
+                                                id="editButton" 
                                                 class="btn btn-outline-secondary w-100"
                                             >
-                                                <i class="fas fa-home me-2"></i>Back to Home
-                                            </a>
+                                                <i class="fas fa-edit me-2"></i>Edit More
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -216,18 +270,18 @@
 
                     <!-- Tips Card -->
                     <div class="card shadow-sm mt-4">
-                        <div class="card-header bg-info text-white">
+                        <div class="card-header">
                             <h6 class="mb-0">
                                 <i class="fas fa-lightbulb me-2"></i>Tips for Best Results
                             </h6>
                         </div>
                         <div class="card-body">
-                            <ul class="mb-0 small">
-                                <li>Keep your original email clear and concise</li>
+                            <ul class="mb-0 small text-secondary">
+                                <li><strong>Write Mode:</strong> Describe what you want to say clearly</li>
+                                <li><strong>Rewrite Mode:</strong> Paste your existing email</li>
                                 <li>Choose a tone that matches your audience</li>
                                 <li>Voice input works best in quiet environments</li>
-                                <li>Review the rewritten email before sending</li>
-                                <li>Try different tones to see what works best</li>
+                                <li>Review and edit the AI output before sending</li>
                             </ul>
                         </div>
                     </div>

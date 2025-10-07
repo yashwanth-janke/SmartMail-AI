@@ -49,10 +49,15 @@ def rewrite_with_huggingface(text: str, tone: str) -> str:
         return rewrite_with_mock(text, tone)
 
 
-def rewrite_with_mock(text: str, tone: str) -> str:
+def rewrite_with_mock(text: str, tone: str, mode: str = 'rewrite') -> str:
     """
-    Mock rewriter for development/testing without API
-    Applies simple text transformations based on tone
+    Mock rewriter/writer for development/testing without API
+    Applies simple text transformations based on tone and mode
+    
+    Args:
+        text: Input text (email to rewrite or description for new email)
+        tone: Desired tone
+        mode: 'write' or 'rewrite'
     """
     
     # Tone-specific templates and modifications
@@ -102,12 +107,91 @@ def rewrite_with_mock(text: str, tone: str) -> str:
     # Get tone template (default to professional)
     template = tone_templates.get(tone.lower(), tone_templates['professional'])
     
-    # Simple rewriting logic
+    # Handle write mode differently
+    if mode == 'write':
+        return generate_new_email(text, tone, template)
+    else:
+        return rewrite_existing_email(text, tone, template)
+
+
+def generate_new_email(description: str, tone: str, template: dict) -> str:
+    """
+    Generate a new email from a description
+    """
+    lines = []
+    
+    # Add greeting
+    lines.append(template['greeting'])
+    lines.append('')
+    
+    # Process the description and create email body
+    desc_lower = description.lower()
+    
+    # Detect intent and generate appropriate content
+    if 'meeting' in desc_lower or 'schedule' in desc_lower:
+        if tone in ['formal', 'professional']:
+            lines.append('I hope this email finds you well.')
+            lines.append('')
+            lines.append('I am writing to request a meeting to discuss the matters outlined below. '
+                        'Would you be available for a discussion at your earliest convenience?')
+        else:
+            lines.append('I wanted to reach out and see if we could schedule some time to chat.')
+        lines.append('')
+        lines.append(f'Regarding: {description}')
+        
+    elif 'thank' in desc_lower or 'appreciate' in desc_lower:
+        lines.append('I wanted to take a moment to express my sincere gratitude.')
+        lines.append('')
+        lines.append(description)
+        lines.append('')
+        lines.append('Your support has been invaluable.')
+        
+    elif 'follow' in desc_lower or 'update' in desc_lower:
+        lines.append('I am writing to follow up on our previous correspondence.')
+        lines.append('')
+        lines.append(description)
+        lines.append('')
+        lines.append('I would appreciate any updates you can provide on this matter.')
+        
+    elif 'sorry' in desc_lower or 'apolog' in desc_lower:
+        lines.append('I am writing to sincerely apologize.')
+        lines.append('')
+        lines.append(description)
+        lines.append('')
+        lines.append('I take full responsibility and will ensure this does not happen again.')
+        
+    else:
+        # Generic email generation
+        if tone in ['formal', 'professional']:
+            lines.append('I hope this message finds you well.')
+            lines.append('')
+        
+        lines.append(description)
+        lines.append('')
+        
+        if 'request' in desc_lower or 'need' in desc_lower or 'could you' in desc_lower:
+            lines.append('I would greatly appreciate your assistance with this matter.')
+    
+    # Add closing
+    lines.append('')
+    lines.append(template['closing'])
+    
+    # Add metadata
+    result = '\n'.join(lines)
+    result += f"\n\n[✨ Generated in {tone} tone - {template['style']}]"
+    
+    return result
+
+
+def rewrite_existing_email(text: str, tone: str, template: dict) -> str:
+    """
+    Rewrite an existing email with specified tone
+    """
     lines = text.strip().split('\n')
     rewritten_lines = []
     
     # Add appropriate greeting if not present
-    first_line = lines[0].lower()
+    first_line = lines[0].lower() if lines else ''
     if not any(greet in first_line for greet in ['hi', 'hello', 'dear', 'hey']):
         rewritten_lines.append(template['greeting'])
         rewritten_lines.append('')
@@ -126,7 +210,7 @@ def rewrite_with_mock(text: str, tone: str) -> str:
     
     # Add a note about the rewrite
     result = '\n'.join(rewritten_lines)
-    result += f"\n\n[✨ Rewritten in {tone} tone - This email has been polished to be {template['style']}]"
+    result += f"\n\n[✨ Rewritten in {tone} tone - {template['style']}]"
     
     return result
 
@@ -171,17 +255,18 @@ def apply_tone_modifications(text: str, tone: str) -> str:
     return text
 
 
-def rewrite_email(text: str, tone: str = 'professional') -> str:
+def rewrite_email(text: str, tone: str = 'professional', mode: str = 'rewrite') -> str:
     """
-    Main function to rewrite email based on tone
+    Main function to rewrite/generate email based on tone and mode
     Automatically selects the best available backend
     
     Args:
-        text: Original email text
+        text: Original email text or description for new email
         tone: Desired tone (formal, casual, professional, friendly, etc.)
+        mode: 'write' for new email generation or 'rewrite' for rewriting existing email
     
     Returns:
-        Rewritten email text
+        Rewritten or generated email text
     """
     
     # Validate inputs
@@ -197,9 +282,9 @@ def rewrite_email(text: str, tone: str = 'professional') -> str:
             return rewrite_with_huggingface(text, tone)
         except Exception as e:
             print(f"Hugging Face API failed, falling back to mock: {str(e)}")
-            return rewrite_with_mock(text, tone)
+            return rewrite_with_mock(text, tone, mode)
     else:
-        return rewrite_with_mock(text, tone)
+        return rewrite_with_mock(text, tone, mode)
 
 
 # Test function

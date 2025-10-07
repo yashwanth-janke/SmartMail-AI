@@ -6,28 +6,28 @@
 /* ==================== Color Variables ==================== */
 :root {
     /* Primary Colors - Inspired by Firebase/JetBrains */
-    --primary-bg: #1a1a2e;
-    --secondary-bg: #16213e;
-    --tertiary-bg: #0f3460;
-    --accent-primary: #e94560;
-    --accent-secondary: #f39c12;
-    --accent-tertiary: #00d4ff;
-    --accent-success: #00e676;
-    --accent-warning: #ffd93d;
-    --accent-danger: #ff5252;
-    --accent-info: #00bcd4;
+    --primary-bg: #0d1117;
+    --secondary-bg: #161b22;
+    --tertiary-bg: #21262d;
+    --accent-primary: #ff6b6b;
+    --accent-secondary: #ffa500;
+    --accent-tertiary: #4ecdc4;
+    --accent-success: #51cf66;
+    --accent-warning: #ffd43b;
+    --accent-danger: #ff6b6b;
+    --accent-info: #4dabf7;
     
     /* Text Colors */
-    --text-primary: #e8e8e8;
-    --text-secondary: #b0b0b0;
-    --text-muted: #7a7a7a;
-    --text-dark: #1a1a2e;
+    --text-primary: #f0f6fc;
+    --text-secondary: #c9d1d9;
+    --text-muted: #8b949e;
+    --text-dark: #0d1117;
     
     /* Card & Surface Colors */
-    --card-bg: #1e1e30;
-    --card-hover: #252538;
-    --input-bg: #2a2a3e;
-    --border-color: #3a3a4e;
+    --card-bg: #1c2128;
+    --card-hover: #22272e;
+    --input-bg: #0d1117;
+    --border-color: #30363d;
     
     /* Gradient Colors */
     --gradient-primary: linear-gradient(135deg, #e94560 0%, #f39c12 100%);
@@ -233,11 +233,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-header {
-    background: var(--secondary-bg) !important;
-    border-bottom: 1px solid var(--border-color);
+    background: var(--tertiary-bg) !important;
+    border-bottom: 2px solid var(--accent-primary);
     color: var(--text-primary);
     font-weight: 600;
     border-radius: 12px 12px 0 0 !important;
+    padding: 1rem 1.5rem;
 }
 
 .card-body {
@@ -370,24 +371,31 @@ textarea.form-control {
 }
 
 .alert-info {
-    background: rgba(0, 188, 212, 0.2);
+    background: rgba(78, 205, 196, 0.15);
     border-left: 4px solid var(--accent-info);
+    color: var(--text-primary);
+    border: 1px solid rgba(78, 205, 196, 0.3);
 }
 
 .alert-success {
-    background: rgba(0, 230, 118, 0.2);
+    background: rgba(81, 207, 102, 0.15);
     border-left: 4px solid var(--accent-success);
+    color: var(--text-primary);
+    border: 1px solid rgba(81, 207, 102, 0.3);
 }
 
 .alert-danger {
-    background: rgba(255, 82, 82, 0.2);
+    background: rgba(255, 107, 107, 0.15);
     border-left: 4px solid var(--accent-danger);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 107, 107, 0.3);
 }
 
 .alert-warning {
-    background: rgba(255, 217, 61, 0.2);
+    background: rgba(255, 212, 59, 0.15);
     border-left: 4px solid var(--accent-warning);
     color: var(--text-primary);
+    border: 1px solid rgba(255, 212, 59, 0.3);
 }
 
 /* ==================== Badges ==================== */
@@ -461,7 +469,8 @@ textarea.form-control {
 }
 
 .bg-success.bg-opacity-10 {
-    background: rgba(0, 230, 118, 0.1) !important;
+    background: rgba(81, 207, 102, 0.15) !important;
+    border: 1px solid rgba(81, 207, 102, 0.2);
 }
 
 /* ==================== Modal ==================== */
@@ -619,6 +628,127 @@ textarea.form-control {
 
 .hover-glow:hover {
     box-shadow: var(--glow-primary);
+}
+
+/* ==================== Tab Styles ==================== */
+.nav-tabs {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.nav-tabs .nav-link {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 1rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent-primary);
+    background: transparent;
+    border-bottom-color: var(--accent-primary);
+}
+
+/* ==================== Mode Toggle ==================== */
+.mode-toggle {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 0.5rem;
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+}
+
+.mode-toggle .btn {
+    flex: 1;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.mode-toggle .btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* ==================== Template Cards ==================== */
+.template-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.template-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.template-card.selected {
+    border-color: var(--accent-primary);
+    background: var(--card-hover);
+}
+
+.template-card h6 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.template-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* ==================== Better Form Controls ==================== */
+.form-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    color: var(--text-muted);
+}
+
+.input-group-text {
+    background: var(--tertiary-bg);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+/* ==================== Improved Cards ==================== */
+.card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+/* ==================== Better Output Area ==================== */
+.output-text {
+    background: var(--card-bg) !important;
+    border: 2px solid var(--accent-success) !important;
+    color: var(--text-primary);
+    line-height: 1.8;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 1.5rem !important;
 }
 
 /* ==================== Utility Classes ==================== */
