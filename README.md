@@ -165,9 +165,22 @@ The application uses a modern dark theme inspired by Firebase Studio and JetBrai
 
 ## 🔧 Configuration
 
-### Using Hugging Face API (Optional)
+### Using Groq API (Recommended - Fast & Free!)
 
-To use real AI models instead of mock rewriting:
+To use real AI instead of mock generation:
+
+1. **Get Free API Key**: Visit [https://console.groq.com](https://console.groq.com)
+2. **Set Environment Variable**:
+   ```powershell
+   $env:GROQ_API_KEY="your-api-key-here"
+   ```
+3. **Done!** The app automatically uses Groq API
+
+📖 **See [GROQ_SETUP.md](GROQ_SETUP.md) for detailed setup instructions**
+
+### Alternative: Hugging Face API (Optional)
+
+If you prefer Hugging Face instead:
 
 1. Get an API key from [Hugging Face](https://huggingface.co/)
 2. Set environment variable:
@@ -176,6 +189,7 @@ To use real AI models instead of mock rewriting:
    ```
 3. In `model.py`, change:
    ```python
+   USE_GROQ_API = False
    USE_HUGGINGFACE_API = True
    ```
 

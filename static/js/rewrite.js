@@ -24,6 +24,7 @@
         initializeSpeechRecognition();
         setupEventListeners();
         updateUIForMode();
+        validateInput(); // Check initial state
     });
 
     /**
@@ -284,12 +285,12 @@
     }
 
     /**
-     * Validate input and enable/disable rewrite button
+     * Validate input and enable/disable generate button
      */
     function validateInput() {
         const text = elements.emailInput.val().trim();
-        const isValid = text.length >= 10 && text.length <= 5000;
-        elements.rewriteButton.prop('disabled', !isValid);
+        const isValid = text.length >= 5 && text.length <= 5000;
+        elements.generateButton.prop('disabled', !isValid);
     }
 
     /**
@@ -365,8 +366,8 @@
         const text = elements.emailInput.val().trim();
         const tone = elements.toneSelect.val();
 
-        if (text.length < 10) {
-            showToast('Invalid Input', 'Please enter at least 10 characters', 'warning');
+        if (text.length < 5) {
+            showToast('Invalid Input', 'Please enter at least 5 characters', 'warning');
             return;
         }
 

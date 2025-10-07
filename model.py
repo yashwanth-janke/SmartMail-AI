@@ -1,6 +1,6 @@
 """
 AI Model Integration for Email Rewriting
-Supports multiple AI backends: Hugging Face API, local models, or mock data
+Supports Groq API, Hugging Face API, or mock data
 """
 
 import os
@@ -9,12 +9,86 @@ import json
 from typing import Optional
 
 # Configuration
+USE_GROQ_API = True  # Set to True to use Groq API (Recommended)
 USE_HUGGINGFACE_API = False  # Set to True to use Hugging Face API
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')  # Set your Groq API key
 HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY', '')  # Set your API key in environment
 HUGGINGFACE_MODEL = "facebook/bart-large-cnn"  # You can change this to other models
 
 
-def rewrite_with_huggingface(text: str, tone: str) -> str:
+def rewrite_with_groq(text: str, tone: str, mode: str = 'rewrite') -> str:
+    """
+    Rewrite or generate email using Groq API (Fast and Free!)
+    
+    Args:
+        text: Email content or description
+        tone: Desired tone
+        mode: 'write' or 'rewrite'
+    
+    Returns:
+        Generated/rewritten email
+    """
+    if not GROQ_API_KEY:
+        raise ValueError("Groq API key not found. Set GROQ_API_KEY environment variable.")
+    
+    API_URL = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    # Create appropriate prompt based on mode
+    if mode == 'write':
+        system_prompt = f"""You are an expert email writer. Generate a professional, well-structured email based on the user's description.
+The email should be in a {tone} tone. Make it natural, appropriate, and ready to send.
+Include proper greeting, body, and closing. Do not add subject line."""
+        user_prompt = f"Generate an email with the following details:\n\n{text}"
+    else:
+        system_prompt = f"""You are an expert email editor. Rewrite the given email to make it better.
+Apply a {tone} tone while preserving the original meaning and intent.
+Improve clarity, professionalism, and impact. Keep the same structure but enhance the language."""
+        user_prompt = f"Rewrite this email in a {tone} tone:\n\n{text}"
+    
+    payload = {
+        "model": "mixtral-8x7b-32768",  # Fast and capable model
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1024,
+        "top_p": 1,
+        "stream": False
+    }
+    
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'choices' in result and len(result['choices']) > 0:
+                generated_text = result['choices'][0]['message']['content'].strip()
+                return generated_text
+            else:
+                raise Exception("No response from Groq API")
+        else:
+            error_msg = f"Groq API Error: {response.status_code}"
+            if response.text:
+                error_msg += f" - {response.text}"
+            print(error_msg)
+            raise Exception(error_msg)
+    
+    except requests.exceptions.Timeout:
+        raise Exception("Groq API timeout. Please try again.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error calling Groq API: {str(e)}")
+        raise Exception(f"Network error: {str(e)}")
+    except Exception as e:
+        print(f"Groq API error: {str(e)}")
+        raise Exception(str(e))
+
+
+def rewrite_with_huggingface(text: str, tone: str, mode: str = 'rewrite') -> str:
     """
     Rewrite email using Hugging Face Inference API
     """
@@ -273,37 +347,83 @@ def rewrite_email(text: str, tone: str = 'professional', mode: str = 'rewrite') 
     if not text or not text.strip():
         raise ValueError("Email text cannot be empty")
     
-    if len(text.strip()) < 10:
+    if len(text.strip()) < 5:
         raise ValueError("Email text is too short")
     
-    # Choose backend
-    if USE_HUGGINGFACE_API and HUGGINGFACE_API_KEY:
+    # Choose backend - Groq is preferred
+    if USE_GROQ_API and GROQ_API_KEY:
         try:
-            return rewrite_with_huggingface(text, tone)
+            print(f"🚀 Using Groq API ({mode} mode, {tone} tone)")
+            return rewrite_with_groq(text, tone, mode)
         except Exception as e:
-            print(f"Hugging Face API failed, falling back to mock: {str(e)}")
+            print(f"Groq API failed: {str(e)}")
+            print("Falling back to mock generator...")
+            return rewrite_with_mock(text, tone, mode)
+    elif USE_HUGGINGFACE_API and HUGGINGFACE_API_KEY:
+        try:
+            print(f"🤖 Using Hugging Face API ({mode} mode, {tone} tone)")
+            return rewrite_with_huggingface(text, tone, mode)
+        except Exception as e:
+            print(f"Hugging Face API failed: {str(e)}")
+            print("Falling back to mock generator...")
             return rewrite_with_mock(text, tone, mode)
     else:
+        print(f"📝 Using mock generator ({mode} mode, {tone} tone)")
         return rewrite_with_mock(text, tone, mode)
 
 
 # Test function
 if __name__ == "__main__":
+    print("🧪 Testing Email Generator with Groq API\n")
+    
+    # Test 1: Write Mode
+    print("=" * 70)
+    print("TEST 1: WRITE MODE - Generate New Email")
+    print("=" * 70)
+    test_description = "I need to schedule a meeting with the team tomorrow at 2pm to discuss the Q4 project timeline and deliverables"
+    
+    try:
+        result = rewrite_email(test_description, tone='professional', mode='write')
+        print(f"\n📧 Generated Email:\n{result}\n")
+    except Exception as e:
+        print(f"❌ Error: {str(e)}\n")
+    
+    # Test 2: Rewrite Mode
+    print("=" * 70)
+    print("TEST 2: REWRITE MODE - Polish Existing Email")
+    print("=" * 70)
     test_email = """
-    Hi,
-    I wanted to ask if you can send me the report by tomorrow.
-    Thanks
+    hey,
+    can you send me that report we talked about? need it by friday.
+    thanks
     """
     
-    tones = ['formal', 'professional', 'casual', 'friendly', 'persuasive']
+    try:
+        result = rewrite_email(test_email, tone='formal', mode='rewrite')
+        print(f"\n📧 Rewritten Email:\n{result}\n")
+    except Exception as e:
+        print(f"❌ Error: {str(e)}\n")
     
-    print("🧪 Testing Email Rewriter\n")
-    print(f"Original Email:\n{test_email}\n")
-    print("=" * 60)
+    # Test 3: Different Tones
+    print("=" * 70)
+    print("TEST 3: TONE VARIATIONS")
+    print("=" * 70)
+    test_text = "thank you for your help with the code yesterday"
+    tones = ['professional', 'friendly', 'formal']
     
     for tone in tones:
-        print(f"\n{tone.upper()} TONE:")
-        print("-" * 60)
-        result = rewrite_email(test_email, tone)
-        print(result)
-        print("-" * 60)
+        print(f"\n🎨 {tone.upper()} TONE:")
+        print("-" * 70)
+        try:
+            result = rewrite_email(test_text, tone=tone, mode='write')
+            print(result)
+        except Exception as e:
+            print(f"❌ Error: {str(e)}")
+        print("-" * 70)
+    
+    print("\n✅ Testing complete!")
+    
+    if not GROQ_API_KEY:
+        print("\n⚠️  WARNING: GROQ_API_KEY not set!")
+        print("Set it with: $env:GROQ_API_KEY='your-key-here'")
+        print("Or see GROQ_SETUP.md for detailed instructions")

@@ -94,8 +94,8 @@ def generate():
         if not original_text:
             return jsonify({'error': 'Email text is required'}), 400
         
-        if len(original_text) < 10:
-            return jsonify({'error': 'Email text is too short (minimum 10 characters)'}), 400
+        if len(original_text) < 5:
+            return jsonify({'error': 'Email text is too short (minimum 5 characters)'}), 400
         
         if len(original_text) > 5000:
             return jsonify({'error': 'Email text is too long (maximum 5000 characters)'}), 400
